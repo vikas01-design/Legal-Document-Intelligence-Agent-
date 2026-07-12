@@ -34,16 +34,27 @@ router.post(
       console.log("Mime Type:", req.file.mimetype);
       console.log("Size:", req.file.size);
 
-      const result = await uploadDocument(req.file.path);
-
-      console.log("✅ UploadDocument Finished");
-      console.log(result);
-
-      return res.json({
+      // Respond immediately so Render's 30s gateway timeout is never hit.
+      // The frontend already has the PDF via local blob URL.
+      res.json({
         success: true,
         filename: req.file.originalname,
-        chunks: result.chunks,
+        chunks: 0, // Will be filled after background processing
+        status: "processing",
       });
+
+      // Fire-and-forget: process embedding + Qdrant indexing in the background
+      uploadDocument(req.file.path)
+        .then((result) => {
+          console.log("✅ Background indexing finished");
+          console.log(`   Chunks indexed: ${result.chunks}`);
+        })
+        .catch((err) => {
+          console.error("❌ Background indexing failed");
+          console.error(err);
+        });
+
+      return;
 
     } catch (error) {
 
