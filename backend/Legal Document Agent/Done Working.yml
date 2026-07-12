@@ -1,0 +1,21 @@
+info:
+  name: Done Working
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:3001/chat
+  body:
+    type: json
+    data: |-
+      {
+        "question":"What is Confidential Information?"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,52 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "mastra dev",
+    "build": "mastra build",
+    "start": "mastra start",
+    "server": "tsx src/server.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^4.0.11",
+    "@ai-sdk/groq": "^4.0.7",
+    "@ai-sdk/openai": "^4.0.11",
+    "@ai-sdk/xai": "^4.0.9",
+    "@google/genai": "^2.10.0",
+    "@mastra/core": "^1.50.0",
+    "@mastra/duckdb": "^1.5.0",
+    "@mastra/evals": "^1.5.1",
+    "@mastra/libsql": "^1.15.1",
+    "@mastra/loggers": "^1.2.0",
+    "@mastra/memory": "^1.22.1",
+    "@mastra/observability": "^1.16.0",
+    "@qdrant/js-client-rest": "^1.18.0",
+    "ai": "^6.0.222",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "pdfjs-dist": "^6.1.200",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^26.1.0",
+    "@types/pdf-parse": "^1.1.5",
+    "mastra": "^1.18.1",
+    "tsx": "^4.23.0",
+    "typescript": "^6.0.3"
+  }
+}

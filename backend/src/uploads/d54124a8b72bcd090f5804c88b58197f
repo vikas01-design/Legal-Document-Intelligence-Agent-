@@ -1,0 +1,23 @@
+info:
+  name: Upload Contract
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:3001/upload
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - c:\Users\vikas\OneDrive\Desktop\Legal-Document-Agent\backend\documents\NDA.pdf\Basic-Non-Disclosure-Agreement.pdf
+        contentType: file
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
