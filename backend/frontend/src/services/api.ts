@@ -1,36 +1,32 @@
 import axios from "axios";
 
-// In production on Render, frontend and backend are on different domains
-// Use the backend URL from environment variable or default to the backend service
+/**
+ * In development: baseURL is '' so Vite's proxy handles routing
+ *   /chat    → http://localhost:3001/chat
+ *   /upload  → http://localhost:3001/upload
+ *   /analyze → http://localhost:3001/analyze
+ *
+ * In production: use the explicit backend URL from env var
+ */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? (import.meta.env.MODE === 'production' ? 'https://lexora-ai-w6cs.onrender.com' : ''),
-  timeout: 60000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: import.meta.env.VITE_API_URL ?? "",
+  timeout: 120_000, // 2 min — AI can be slow
 });
 
-// Add request interceptor for debugging
-api.interceptors.request.use(
-  (config) => {
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, config.data);
-    return config;
-  },
-  (error) => {
-    console.error('API Request Error:', error);
-    return Promise.reject(error);
-  }
-);
+api.interceptors.request.use((config) => {
+  console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+  return config;
+});
 
-// Add response interceptor for debugging
 api.interceptors.response.use(
-  (response) => {
-    console.log(`API Response: ${response.config.url}`, response.status, response.data);
-    return response;
-  },
-  (error) => {
-    console.error('API Response Error:', error.config?.url, error.response?.status, error.response?.data);
-    return Promise.reject(error);
+  (res) => res,
+  (err) => {
+    console.error(
+      `[API Error] ${err.config?.url}`,
+      err.response?.status,
+      err.response?.data ?? err.message
+    );
+    return Promise.reject(err);
   }
 );
 

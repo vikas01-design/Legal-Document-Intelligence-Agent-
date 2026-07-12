@@ -31,7 +31,15 @@ const GHOST_PROMPTS = [
 export default function ChatWindow({ mood, setMood, hideHeader, messages, setMessages, onQuerySubmitted }: ChatWindowProps) {
   const [loading, setLoading] = useState(false);
   const [ghostIndex, setGhostIndex] = useState(0);
+  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Health-check the backend once on mount
+  useEffect(() => {
+    api.get("/api/health")
+      .then(() => setBackendOnline(true))
+      .catch(() => setBackendOnline(false));
+  }, []);
 
   // Rotate ghost prompts
   useEffect(() => {
@@ -77,19 +85,32 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
         ]);
         setMood("idle");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Chat request failed:", err);
-      const isOffline =
-        axios.isAxiosError(err) &&
-        (!err.response || err.code === "ERR_NETWORK" || err.code === "ECONNREFUSED");
+
+      let errorText = "Something went wrong. Please try again.";
+
+      if (axios.isAxiosError(err)) {
+        if (err.response) {
+          // Server responded with non-2xx
+          const serverMsg = err.response.data?.message || err.response.data?.error;
+          errorText = serverMsg
+            ? `Server error: ${serverMsg}`
+            : `Request failed (${err.response.status}). Please try again.`;
+        } else if (err.code === "ECONNABORTED" || err.code === "ERR_CANCELED") {
+          errorText = "Request timed out. The AI is taking too long — please try again.";
+        } else {
+          // No response — network/CORS issue
+          errorText = "Cannot connect to the backend. Make sure the server is running on port 3001.";
+        }
+      }
+
       setMessages((p) => [
         ...p,
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          text: isOffline
-            ? "I can't reach the Lexora backend right now. Please check your connection and try again."
-            : "I'm having trouble processing your request right now. Please try again in a moment.",
+          text: errorText,
         },
       ]);
       setMood("idle");
@@ -126,6 +147,14 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
               <MoreHorizontal size={16} />
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Backend offline banner */}
+      {backendOnline === false && (
+        <div className="mx-4 mb-2 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0" />
+          Backend offline — run <code className="font-mono bg-rose-100 px-1 rounded">npm run server</code> in the backend folder
         </div>
       )}
 
