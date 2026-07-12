@@ -27,26 +27,86 @@ const GHOST_PROMPTS = [
   "Identify any unusual or risky clauses",
 ];
 
-/** Classify an axios error into a user-friendly message */
+/** Sleep helper for retry back-off */
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Call /chat with up to `maxRetries` automatic retries on network-level
+ * failures (no response). Server errors (4xx / 5xx) are NOT retried —
+ * they carry a meaningful message we should show the user.
+ */
+async function chatWithRetry(
+  question: string,
+  maxRetries = 2,
+  baseDelay = 1200
+): Promise<{ answer: string; source?: string }> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await api.post("/chat", { question });
+      const data = res.data;
+
+      // Backend always returns { success, answer } — show answer either way.
+      // success:false just means the AI couldn't help (e.g. no doc uploaded),
+      // but the answer field contains a useful explanation.
+      const answer: string =
+        data.answer ||
+        data.message ||
+        "I couldn't generate a response. Please try again.";
+
+      const source: string | undefined =
+        data.toolResults?.[0]?.payload?.result?.source;
+
+      return { answer, source };
+    } catch (err) {
+      lastError = err;
+
+      // Only retry on genuine network failures (no response).
+      // If the server replied with an error status, surface it immediately.
+      if (axios.isAxiosError(err) && err.response) {
+        // Server is up but unhappy — don't retry, just surface the message
+        const msg =
+          err.response.data?.message ||
+          err.response.data?.error ||
+          err.response.data?.answer;
+        if (msg) return { answer: msg };
+        throw err; // re-throw for classifyError below
+      }
+
+      // Network / proxy / timeout — retry after back-off unless last attempt
+      if (attempt < maxRetries) {
+        await sleep(baseDelay * (attempt + 1));
+      }
+    }
+  }
+
+  // All retries exhausted
+  throw lastError;
+}
+
+/** Map a final error into a human-readable message */
 function classifyError(err: unknown): string {
-  if (!axios.isAxiosError(err)) return "Something went wrong. Please try again.";
+  if (!axios.isAxiosError(err)) {
+    return "Something went wrong. Please try again.";
+  }
 
   if (err.response) {
-    // Server replied with a non-2xx — extract server message if available
     const msg = err.response.data?.message || err.response.data?.error;
-    if (msg) return msg;
-    if (err.response.status === 500) return "The AI service hit an internal error. Please try again.";
-    if (err.response.status === 429) return "Too many requests — please wait a moment and try again.";
+    if (msg) return String(msg);
+    if (err.response.status === 500)
+      return "The AI service hit an internal error. Please try again.";
+    if (err.response.status === 429)
+      return "Too many requests — please wait a moment and try again.";
     return `Request failed (${err.response.status}). Please try again.`;
   }
 
-  // No response at all — could be network, proxy, or timeout
   if (err.code === "ECONNABORTED" || err.code === "ERR_CANCELED") {
-    return "The AI is taking too long to respond. Please try again.";
+    return "The AI took too long to respond. Please try again — complex queries can take up to 30 seconds.";
   }
 
-  // Everything else — don't assume the backend is "offline", just say retry
-  return "Could not reach the server. Please check that the backend is running and try again.";
+  // No response after retries — give actionable info without being alarmist
+  return "Could not reach the server after multiple attempts. Please make sure the backend is running (`npm run server` in the backend folder) and try again.";
 }
 
 export default function ChatWindow({
@@ -78,7 +138,6 @@ export default function ChatWindow({
 
   const send = useCallback(
     async (text: string) => {
-      // Clear any previous retry state
       setLastFailedText(null);
 
       const userMsg: ChatMessage = {
@@ -92,47 +151,30 @@ export default function ChatWindow({
       setMood("thinking");
 
       try {
-        const res = await api.post("/chat", { question: text });
+        const { answer, source } = await chatWithRetry(text);
 
-        if (res.data.success) {
-          const aiMsg: ChatMessage = {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            text: res.data.answer,
-            source: res.data.toolResults?.[0]?.payload?.result?.source,
-          };
-          setMood("talking");
-          setMessages((p) => [...p, aiMsg]);
-          setTimeout(() => setMood("idle"), 2000);
-        } else {
-          // Backend returned success:false with a message — show it normally
-          setMessages((p) => [
-            ...p,
-            {
-              id: crypto.randomUUID(),
-              role: "assistant",
-              text:
-                res.data.answer ||
-                res.data.message ||
-                "I'm having trouble processing your request right now.",
-            },
-          ]);
-          setMood("idle");
-        }
+        const aiMsg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          text: answer,
+          source,
+        };
+        setMood("talking");
+        setMessages((p) => [...p, aiMsg]);
+        setTimeout(() => setMood("idle"), 2000);
       } catch (err) {
-        console.error("[ChatWindow] send failed:", err);
-        const errorText = classifyError(err);
+        console.error("[ChatWindow] send failed after retries:", err);
 
         setMessages((p) => [
           ...p,
           {
             id: crypto.randomUUID(),
             role: "assistant",
-            text: errorText,
+            text: classifyError(err),
           },
         ]);
 
-        // Store the original question so the user can retry with one click
+        // Keep the retry button for genuine failures
         setLastFailedText(text);
         setMood("idle");
       } finally {
@@ -142,11 +184,12 @@ export default function ChatWindow({
     [setMessages, setMood, onQuerySubmitted]
   );
 
-  const isHeroState = messages.length === 0 || (messages.length === 1 && loading);
+  const isHeroState =
+    messages.length === 0 || (messages.length === 1 && loading);
 
   return (
     <div className="flex flex-col h-full relative">
-      {/* ── Header ──────────────────────────────────── */}
+      {/* ── Header ───────────────────────────────────── */}
       {!hideHeader && (
         <div className="flex items-center justify-between px-5 py-4">
           <div>
@@ -177,7 +220,7 @@ export default function ChatWindow({
         </div>
       )}
 
-      {/* ── One-click retry bar (shown only after a failed request) ── */}
+      {/* ── Retry bar (only after genuine failure) ─────── */}
       <AnimatePresence>
         {lastFailedText && !loading && (
           <motion.div
@@ -197,7 +240,7 @@ export default function ChatWindow({
         )}
       </AnimatePresence>
 
-      {/* ── Robot hero (empty state) ─────────────────── */}
+      {/* ── Robot hero (empty state) ──────────────────── */}
       <AnimatePresence>
         {isHeroState && (
           <motion.div
@@ -261,7 +304,7 @@ export default function ChatWindow({
         )}
       </AnimatePresence>
 
-      {/* ── Message thread ───────────────────────────── */}
+      {/* ── Message thread ────────────────────────────── */}
       {!isHeroState && (
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
           <div className="flex items-center gap-2 mb-1">
@@ -313,7 +356,7 @@ export default function ChatWindow({
         </div>
       )}
 
-      {/* ── Input ────────────────────────────────────── */}
+      {/* ── Input ─────────────────────────────────────── */}
       <div className="px-4 pb-4 pt-2">
         <ChatInput onSend={send} disabled={loading} />
       </div>
