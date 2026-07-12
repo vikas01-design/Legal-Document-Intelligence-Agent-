@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, MoreHorizontal } from "lucide-react";
+import axios from "axios";
 import api from "../../services/api";
 import type { ChatMessage } from "../../types/chat";
 import ChatBubble from "./ChatBubble";
@@ -61,8 +62,21 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
       setMood("talking");
       setMessages((p) => [...p, aiMsg]);
       setTimeout(() => setMood("idle"), 2000);
-    } catch {
-      setMessages((p) => [...p, { id: crypto.randomUUID(), role: "assistant", text: "I'm having trouble processing your request right now. Please try again in a moment." }]);
+    } catch (err) {
+      console.error("Chat request failed:", err);
+      const isOffline =
+        axios.isAxiosError(err) &&
+        (!err.response || err.code === "ERR_NETWORK" || err.code === "ECONNREFUSED");
+      setMessages((p) => [
+        ...p,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          text: isOffline
+            ? "I can't reach the Lexora backend right now. Make sure the API server is running on port 3001, then try again."
+            : "I'm having trouble processing your request right now. Please try again in a moment.",
+        },
+      ]);
       setMood("idle");
     } finally {
       setLoading(false);
