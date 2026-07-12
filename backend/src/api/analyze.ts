@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { analyzeContract, classifyDocument } from "../mastra/services/chat/analyze-contract";
-import { getEntireContract } from "../mastra/qdrant/get-document";
+import { getEntireContract } from "../mastra/services/qdrant/get-document";
 
 const router = Router();
 
