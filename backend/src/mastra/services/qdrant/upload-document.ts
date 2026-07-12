@@ -35,18 +35,29 @@ export async function uploadDocument(pdfPath: string) {
   console.log(`✅ ${chunks.length} chunks created\n`);
 
   const points = [];
+  const BATCH_SIZE = 5;
 
-  for (let i = 0; i < chunks.length; i++) {
-    console.log(`Embedding chunk ${i + 1}/${chunks.length}`);
+  for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+    const batch = chunks.slice(i, i + BATCH_SIZE);
+    console.log(`Embedding chunks ${i + 1} to ${Math.min(i + BATCH_SIZE, chunks.length)} of ${chunks.length}...`);
 
-    const embedding = await generateEmbedding(chunks[i]);
-    const payload = inferMetadata(chunks[i], pdfName, i + 1);
-
-    points.push({
-      id: Date.now() + i,
-      vector: embedding,
-      payload,
+    const batchPromises = batch.map(async (chunk, index) => {
+      const chunkIdx = i + index;
+      const embedding = await generateEmbedding(chunk);
+      const payload = inferMetadata(chunk, pdfName, chunkIdx + 1);
+      return {
+        id: Date.now() + chunkIdx,
+        vector: embedding,
+        payload,
+      };
     });
+
+    const batchResults = await Promise.all(batchPromises);
+    points.push(...batchResults);
+
+    if (i + BATCH_SIZE < chunks.length) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
   }
 
   console.log("\n⬆️ Uploading vectors to Qdrant...");
