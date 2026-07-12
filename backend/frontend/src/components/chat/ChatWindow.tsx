@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, MoreHorizontal } from "lucide-react";
+import { Trash2, MoreHorizontal, RefreshCw } from "lucide-react";
 import axios from "axios";
 import api from "../../services/api";
 import type { ChatMessage } from "../../types/chat";
@@ -19,7 +19,6 @@ interface ChatWindowProps {
   onQuerySubmitted?: (text: string) => void;
 }
 
-// Ghost text suggestions shown when empty (like the reference)
 const GHOST_PROMPTS = [
   "What are the payment terms in this contract?",
   "Summarise the key obligations of each party",
@@ -28,23 +27,48 @@ const GHOST_PROMPTS = [
   "Identify any unusual or risky clauses",
 ];
 
-export default function ChatWindow({ mood, setMood, hideHeader, messages, setMessages, onQuerySubmitted }: ChatWindowProps) {
+/** Classify an axios error into a user-friendly message */
+function classifyError(err: unknown): string {
+  if (!axios.isAxiosError(err)) return "Something went wrong. Please try again.";
+
+  if (err.response) {
+    // Server replied with a non-2xx — extract server message if available
+    const msg = err.response.data?.message || err.response.data?.error;
+    if (msg) return msg;
+    if (err.response.status === 500) return "The AI service hit an internal error. Please try again.";
+    if (err.response.status === 429) return "Too many requests — please wait a moment and try again.";
+    return `Request failed (${err.response.status}). Please try again.`;
+  }
+
+  // No response at all — could be network, proxy, or timeout
+  if (err.code === "ECONNABORTED" || err.code === "ERR_CANCELED") {
+    return "The AI is taking too long to respond. Please try again.";
+  }
+
+  // Everything else — don't assume the backend is "offline", just say retry
+  return "Could not reach the server. Please check that the backend is running and try again.";
+}
+
+export default function ChatWindow({
+  mood,
+  setMood,
+  hideHeader,
+  messages,
+  setMessages,
+  onQuerySubmitted,
+}: ChatWindowProps) {
   const [loading, setLoading] = useState(false);
   const [ghostIndex, setGhostIndex] = useState(0);
-  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const [lastFailedText, setLastFailedText] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Health-check the backend once on mount
-  useEffect(() => {
-    api.get("/api/health")
-      .then(() => setBackendOnline(true))
-      .catch(() => setBackendOnline(false));
-  }, []);
-
-  // Rotate ghost prompts
+  // Rotate ghost prompts when idle
   useEffect(() => {
     if (messages.length > 0) return;
-    const t = setInterval(() => setGhostIndex((i) => (i + 1) % GHOST_PROMPTS.length), 3800);
+    const t = setInterval(
+      () => setGhostIndex((i) => (i + 1) % GHOST_PROMPTS.length),
+      3800
+    );
     return () => clearInterval(t);
   }, [messages.length]);
 
@@ -52,78 +76,77 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  const send = async (text: string) => {
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", text };
-    setMessages((p) => [...p, userMsg]);
-    onQuerySubmitted?.(text);
-    setLoading(true);
-    setMood("thinking");
+  const send = useCallback(
+    async (text: string) => {
+      // Clear any previous retry state
+      setLastFailedText(null);
 
-    try {
-      const res = await api.post("/chat", { question: text });
-      
-      console.log("Chat response:", res.data);
-      
-      if (res.data.success) {
-        const aiMsg: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          text: res.data.answer,
-          source: res.data.toolResults?.[0]?.payload?.result?.source,
-        };
-        setMood("talking");
-        setMessages((p) => [...p, aiMsg]);
-        setTimeout(() => setMood("idle"), 2000);
-      } else {
+      const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        text,
+      };
+      setMessages((p) => [...p, userMsg]);
+      onQuerySubmitted?.(text);
+      setLoading(true);
+      setMood("thinking");
+
+      try {
+        const res = await api.post("/chat", { question: text });
+
+        if (res.data.success) {
+          const aiMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            text: res.data.answer,
+            source: res.data.toolResults?.[0]?.payload?.result?.source,
+          };
+          setMood("talking");
+          setMessages((p) => [...p, aiMsg]);
+          setTimeout(() => setMood("idle"), 2000);
+        } else {
+          // Backend returned success:false with a message — show it normally
+          setMessages((p) => [
+            ...p,
+            {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              text:
+                res.data.answer ||
+                res.data.message ||
+                "I'm having trouble processing your request right now.",
+            },
+          ]);
+          setMood("idle");
+        }
+      } catch (err) {
+        console.error("[ChatWindow] send failed:", err);
+        const errorText = classifyError(err);
+
         setMessages((p) => [
           ...p,
           {
             id: crypto.randomUUID(),
             role: "assistant",
-            text: res.data.message || "I'm having trouble processing your request right now.",
+            text: errorText,
           },
         ]);
+
+        // Store the original question so the user can retry with one click
+        setLastFailedText(text);
         setMood("idle");
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      console.error("Chat request failed:", err);
-
-      let errorText = "Something went wrong. Please try again.";
-
-      if (axios.isAxiosError(err)) {
-        if (err.response) {
-          // Server responded with non-2xx
-          const serverMsg = err.response.data?.message || err.response.data?.error;
-          errorText = serverMsg
-            ? `Server error: ${serverMsg}`
-            : `Request failed (${err.response.status}). Please try again.`;
-        } else if (err.code === "ECONNABORTED" || err.code === "ERR_CANCELED") {
-          errorText = "Request timed out. The AI is taking too long — please try again.";
-        } else {
-          // No response — network/CORS issue
-          errorText = "Cannot connect to the backend. Make sure the server is running on port 3001.";
-        }
-      }
-
-      setMessages((p) => [
-        ...p,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          text: errorText,
-        },
-      ]);
-      setMood("idle");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [setMessages, setMood, onQuerySubmitted]
+  );
 
   const isHeroState = messages.length === 0 || (messages.length === 1 && loading);
 
   return (
     <div className="flex flex-col h-full relative">
-      {/* Header */}
+      {/* ── Header ──────────────────────────────────── */}
       {!hideHeader && (
         <div className="flex items-center justify-between px-5 py-4">
           <div>
@@ -137,7 +160,11 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
           <div className="flex items-center gap-2">
             {messages.length > 0 && (
               <button
-                onClick={() => { setMessages([]); setMood("idle"); }}
+                onClick={() => {
+                  setMessages([]);
+                  setMood("idle");
+                  setLastFailedText(null);
+                }}
                 className="w-8 h-8 rounded-xl flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors cursor-pointer"
               >
                 <Trash2 size={14} />
@@ -150,15 +177,27 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
         </div>
       )}
 
-      {/* Backend offline banner */}
-      {backendOnline === false && (
-        <div className="mx-4 mb-2 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0" />
-          Backend offline — run <code className="font-mono bg-rose-100 px-1 rounded">npm run server</code> in the backend folder
-        </div>
-      )}
+      {/* ── One-click retry bar (shown only after a failed request) ── */}
+      <AnimatePresence>
+        {lastFailedText && !loading && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mx-4 mb-2"
+          >
+            <button
+              onClick={() => send(lastFailedText)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-700 font-semibold hover:bg-indigo-100 transition-colors cursor-pointer"
+            >
+              <RefreshCw size={12} />
+              Retry last message
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Robot + empty state hero */}
+      {/* ── Robot hero (empty state) ─────────────────── */}
       <AnimatePresence>
         {isHeroState && (
           <motion.div
@@ -170,7 +209,6 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
             className="flex flex-col items-center justify-center flex-1 px-6 pb-4"
           >
             <div className="relative">
-              {/* Radial gradient glow behind the avatar */}
               <div
                 className={`absolute inset-0 m-auto -z-10 rounded-full blur-[80px] transition-all duration-1000 ${
                   mood === "thinking"
@@ -183,7 +221,6 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
               <LexBot mood={mood} size={200} />
             </div>
 
-            {/* Ghost text prompt / active query */}
             <div className="mt-8 text-center max-w-sm min-h-[72px] flex items-center justify-center">
               <AnimatePresence mode="wait">
                 {loading ? (
@@ -224,10 +261,9 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
         )}
       </AnimatePresence>
 
-      {/* Messages — shown when chat has started and response is ready */}
+      {/* ── Message thread ───────────────────────────── */}
       {!isHeroState && (
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-          {/* Mini robot indicator — floats top right when active */}
           <div className="flex items-center gap-2 mb-1">
             <div className="flex-shrink-0">
               <LexBot mood={mood} size={44} />
@@ -237,7 +273,9 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
                 Lexora AI
               </p>
               <p className="text-[10px] text-slate-400 mt-0.5">
-                {mood === "thinking" ? "Analysing your contract…" : "Legal Intelligence Platform"}
+                {mood === "thinking"
+                  ? "Analysing your contract…"
+                  : "Legal Intelligence Platform"}
               </p>
             </div>
           </div>
@@ -254,7 +292,10 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
             >
               <div
                 className="px-4 py-3 rounded-2xl rounded-bl-sm"
-                style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.04)" }}
+                style={{
+                  background: "rgba(0,0,0,0.02)",
+                  border: "1px solid rgba(0,0,0,0.04)",
+                }}
               >
                 <div className="flex gap-1.5 items-center h-4">
                   {[0, 1, 2].map((i) => (
@@ -272,7 +313,7 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
         </div>
       )}
 
-      {/* Input dock */}
+      {/* ── Input ────────────────────────────────────── */}
       <div className="px-4 pb-4 pt-2">
         <ChatInput onSend={send} disabled={loading} />
       </div>
