@@ -3,6 +3,34 @@ function looksLikeHeading(line: string) {
   return /^(section|article|clause|part|chapter|heading|sub-heading)\b/i.test(normalized) || /^([IVXLC]+|\d+(?:\.\d+)*)\s*([.):-]|$)/.test(normalized);
 }
 
+function splitLongBlock(block: string, maxLength = 2000): string[] {
+  if (block.length <= maxLength) return [block];
+  
+  const subBlocks: string[] = [];
+  let remaining = block;
+  
+  while (remaining.length > 0) {
+    if (remaining.length <= maxLength) {
+      subBlocks.push(remaining);
+      break;
+    }
+    
+    // Find a good split point (sentence boundary or word boundary)
+    let splitIdx = remaining.lastIndexOf(". ", maxLength);
+    if (splitIdx === -1) {
+      splitIdx = remaining.lastIndexOf(" ", maxLength);
+    }
+    if (splitIdx === -1) {
+      splitIdx = maxLength;
+    }
+    
+    subBlocks.push(remaining.substring(0, splitIdx + 1).trim());
+    remaining = remaining.substring(splitIdx + 1).trim();
+  }
+  
+  return subBlocks;
+}
+
 export function chunkText(text: string) {
   const normalized = text.replace(/\r\n/g, "\n").trim();
   if (!normalized) {
@@ -31,5 +59,12 @@ export function chunkText(text: string) {
     blocks.push(tail);
   }
 
-  return blocks.filter((block) => block.length > 40);
+  // Split any blocks that are too long to ensure precise embeddings
+  const finalChunks: string[] = [];
+  for (const block of blocks) {
+    const subChunks = splitLongBlock(block, 2000);
+    finalChunks.push(...subChunks);
+  }
+
+  return finalChunks.filter((block) => block.length > 40);
 }

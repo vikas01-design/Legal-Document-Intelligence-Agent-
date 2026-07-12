@@ -33,7 +33,7 @@ const frontendDist = path.join(__dirname, "..", "frontend", "dist");
 app.use(express.static(frontendDist));
 
 // SPA fallback: serve index.html for all non-API routes
-app.get("*", (req, res) => {
+app.use((req, res) => {
   // Don't serve index.html for API-like paths
   if (req.path.startsWith("/upload") || req.path.startsWith("/chat") || req.path.startsWith("/analyze")) {
     return res.status(404).json({ error: "Not found" });
