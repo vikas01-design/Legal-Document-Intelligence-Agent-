@@ -8,7 +8,8 @@
     "dev": "mastra dev",
     "build": "mastra build",
     "start": "mastra start",
-    "server": "tsx src/server.ts"
+    "server": "tsx src/server.ts",
+    "postinstall": "cd frontend && npm install && npm run build"
   },
   "keywords": [],
   "author": "",
