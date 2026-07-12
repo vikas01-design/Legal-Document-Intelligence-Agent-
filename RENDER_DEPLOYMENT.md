@@ -1,8 +1,14 @@
 # Render Deployment Guide for Lexora AI
 
+## Architecture
+
+Your Lexora AI app consists of two separate Render services:
+- **Frontend**: https://lexora-ai-app.onrender.com (React app)
+- **Backend**: https://lexora-ai-w6cs.onrender.com (Express API server)
+
 ## Required Environment Variables
 
-Set these environment variables in your Render dashboard for the backend service:
+Set these environment variables in your Render dashboard for the **backend service**:
 
 ### Core API Keys
 - `GOOGLE_API_KEY` - Your Google AI API key for Gemini embeddings and chat
@@ -19,7 +25,17 @@ Set these environment variables in your Render dashboard for the backend service
 
 ## Frontend Configuration
 
-The frontend is configured to use relative URLs in production, so no additional environment variables are needed for the frontend build. The API calls will automatically route to the same domain.
+The frontend is configured to use the backend URL `https://lexora-ai-w6cs.onrender.com` in production. If you need to change this, set the `VITE_API_URL` environment variable in your frontend service.
+
+## CORS Configuration
+
+The backend is configured to allow CORS requests from:
+- https://lexora-ai-app.onrender.com (production frontend)
+- http://localhost:5173 (local development)
+- http://localhost:5174 (local development)
+- http://localhost:3000 (local development)
+
+If you deploy to different domains, update the `allowedOrigins` array in `backend/src/server.ts`.
 
 ## Deployment Steps
 

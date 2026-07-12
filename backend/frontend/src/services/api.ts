@@ -1,9 +1,9 @@
 import axios from "axios";
 
-// In production on Render, frontend and backend are on the same domain
-// Use relative URLs. In development, Vite proxy handles the routing.
+// In production on Render, frontend and backend are on different domains
+// Use the backend URL from environment variable or default to the backend service
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? (import.meta.env.MODE === 'production' ? '' : ''),
+  baseURL: import.meta.env.VITE_API_URL ?? (import.meta.env.MODE === 'production' ? 'https://lexora-ai-w6cs.onrender.com' : ''),
   timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
