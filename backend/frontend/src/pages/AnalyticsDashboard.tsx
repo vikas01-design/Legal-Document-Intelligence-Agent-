@@ -22,6 +22,7 @@ interface AnalyticsDashboardProps {
   sessionTimeMs: number;
   cumulativeQueries: number;
   cumulativeContracts: number;
+  isFreshUser?: boolean;
 }
 
 interface FeedbackState {
@@ -36,7 +37,8 @@ export default function AnalyticsDashboard({
   activeMessages,
   sessionTimeMs,
   cumulativeQueries,
-  cumulativeContracts
+  cumulativeContracts,
+  isFreshUser = false
 }: AnalyticsDashboardProps) {
   // --- STATE FOR MOCK DATA / TIME RANGE ---
   const [timeRange, setTimeRange] = useState<"7d" | "30d">("7d");
@@ -80,9 +82,9 @@ export default function AnalyticsDashboard({
   // Live trackers derived from parent states
   const seededContracts = cumulativeContracts;
   const seededQueries = cumulativeQueries;
-  const seededHighRisks = 8 + liveMetrics.highRisks;
-  const seededMediumRisks = 14 + liveMetrics.mediumRisks;
-  const seededLowRisks = 22 + liveMetrics.lowRisks;
+  const seededHighRisks = (isFreshUser ? 0 : 8) + liveMetrics.highRisks;
+  const seededMediumRisks = (isFreshUser ? 0 : 14) + liveMetrics.mediumRisks;
+  const seededLowRisks = (isFreshUser ? 0 : 22) + liveMetrics.lowRisks;
   const totalSeededRisks = seededHighRisks + seededMediumRisks + seededLowRisks;
 
   // Active Session Time formatted ticking
@@ -100,25 +102,29 @@ export default function AnalyticsDashboard({
   // Daily activity details for 7-day sparkline (Hours spent per day, Mon-Sun)
   // Dynamically adds ticking session hours to today (Sunday)
   const dailyActivity7d = useMemo(() => {
-    const currentSessionHours = (sessionTimeMs - 15120000) / (3600 * 1000);
+    const baseline = isFreshUser ? 0 : 15120000;
+    const currentSessionHours = (sessionTimeMs - baseline) / (3600 * 1000);
     const todayExtra = Math.max(0, currentSessionHours);
     return [
-      { day: "Monday", hours: 0.5, label: "30m" },
-      { day: "Tuesday", hours: 0.8, label: "48m" },
-      { day: "Wednesday", hours: 0.4, label: "24m" },
-      { day: "Thursday", hours: 1.3, label: "1h 18m" },
-      { day: "Friday", hours: 0.9, label: "54m" },
-      { day: "Saturday", hours: 0.2, label: "12m" },
-      { day: "Sunday", hours: Math.round((0.1 + todayExtra) * 100) / 100, label: `${Math.round((0.1 + todayExtra) * 60)}m` }
+      { day: "Monday", hours: isFreshUser ? 0 : 0.5, label: isFreshUser ? "0m" : "30m" },
+      { day: "Tuesday", hours: isFreshUser ? 0 : 0.8, label: isFreshUser ? "0m" : "48m" },
+      { day: "Wednesday", hours: isFreshUser ? 0 : 0.4, label: isFreshUser ? "0m" : "24m" },
+      { day: "Thursday", hours: isFreshUser ? 0 : 1.3, label: isFreshUser ? "0m" : "1h 18m" },
+      { day: "Friday", hours: isFreshUser ? 0 : 0.9, label: isFreshUser ? "0m" : "54m" },
+      { day: "Saturday", hours: isFreshUser ? 0 : 0.2, label: isFreshUser ? "0m" : "12m" },
+      { day: "Sunday", hours: Math.round(((isFreshUser ? 0 : 0.1) + todayExtra) * 100) / 100, label: `${Math.round(((isFreshUser ? 0 : 0.1) + todayExtra) * 60)}m` }
     ];
-  }, [sessionTimeMs]);
+  }, [sessionTimeMs, isFreshUser]);
 
   // 30d activity (seeded list of hours + live shift)
   const dailyActivity30d = useMemo(() => {
-    const currentSessionHours = (sessionTimeMs - 15120000) / (3600 * 1000);
+    const baseline = isFreshUser ? 0 : 15120000;
+    const currentSessionHours = (sessionTimeMs - baseline) / (3600 * 1000);
     const todayExtra = Math.max(0, currentSessionHours);
     return Array.from({ length: 30 }, (_, i) => {
-      const seedVals = [0.3, 0.5, 0.8, 1.2, 0.4, 0.1, 0.0, 0.6, 0.9, 1.4, 0.5, 0.2, 0.3, 0.7, 1.1, 1.5, 0.8, 0.3, 0.1, 0.5, 0.9, 1.3, 0.6, 0.2, 0.0, 0.4, 0.8, 1.2, 0.7, 0.3];
+      const seedVals = isFreshUser 
+        ? Array(30).fill(0)
+        : [0.3, 0.5, 0.8, 1.2, 0.4, 0.1, 0.0, 0.6, 0.9, 1.4, 0.5, 0.2, 0.3, 0.7, 1.1, 1.5, 0.8, 0.3, 0.1, 0.5, 0.9, 1.3, 0.6, 0.2, 0.0, 0.4, 0.8, 1.2, 0.7, 0.3];
       const val = seedVals[i % seedVals.length] + (i === 29 ? todayExtra : 0);
       return {
         day: `Day ${i + 1}`,
@@ -126,7 +132,7 @@ export default function AnalyticsDashboard({
         label: `${Math.round(val * 60)}m`
       };
     });
-  }, [sessionTimeMs]);
+  }, [sessionTimeMs, isFreshUser]);
 
   const activeActivity = timeRange === "7d" ? dailyActivity7d : dailyActivity30d;
 
@@ -137,9 +143,9 @@ export default function AnalyticsDashboard({
       ...history.flatMap((item) => item.chatMessages || [])
     ].filter((m) => m.role === "user");
 
-    let termCount = 20; // baseline
-    let payCount = 18;
-    let indemCount = 12;
+    let termCount = isFreshUser ? 0 : 20; // baseline
+    let payCount = isFreshUser ? 0 : 18;
+    let indemCount = isFreshUser ? 0 : 12;
 
     // Helper function to scan text for explicit legal keywords
     const matchLegalConcept = (text: string): "termination" | "payment" | "indemnification" | null => {

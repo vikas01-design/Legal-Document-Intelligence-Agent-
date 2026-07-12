@@ -2,14 +2,12 @@ import { UserButton } from "@clerk/clerk-react";
 import { motion } from "framer-motion";
 import {
   MessageSquare, History, BarChart3,
-  Settings,
 } from "lucide-react";
 
 const nav = [
   { icon: MessageSquare, label: "Chat",      active: true },
   { icon: History,       label: "History",   active: false },
   { icon: BarChart3,     label: "Analytics", active: false },
-  { icon: Settings,      label: "Settings",  active: false },
 ];
 
 interface SidebarProps {

@@ -156,9 +156,11 @@ function HistoryList({ items, activeId, onSelect, onDelete }: HistoryListProps) 
   );
 }
 
+import { useUser } from "@clerk/clerk-react";
 import LandingPage from "./LandingPage";
 
 export default function Home() {
+  const { user, isLoaded } = useUser();
   const [view, setView] = useState<"landing" | "dashboard">("landing");
   const [uploaded, setUploaded] = useState(false);
   const [mood, setMood] = useState<Mood>("idle");
@@ -213,47 +215,49 @@ export default function Home() {
     };
   }, []);
 
-  const [history, setHistory] = useState<HistoryItem[]>(() => {
-    try {
-      const saved = localStorage.getItem("legal_agent_history");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [sessionTimeMs, setSessionTimeMs] = useState(0);
+  const [cumulativeQueries, setCumulativeQueries] = useState(0);
+  const [cumulativeContracts, setCumulativeContracts] = useState(0);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   useEffect(() => {
+    if (!isLoaded || !user) return;
+    const userId = user.id;
+    try {
+      const savedHistory = localStorage.getItem(`legal_agent_history_${userId}`);
+      setHistory(savedHistory ? JSON.parse(savedHistory) : []);
+
+      const savedTime = localStorage.getItem(`lexora_session_time_ms_${userId}`);
+      setSessionTimeMs(savedTime ? parseInt(savedTime, 10) : 0);
+
+      const savedQueries = localStorage.getItem(`lexora_cumulative_queries_${userId}`);
+      setCumulativeQueries(savedQueries ? parseInt(savedQueries, 10) : 0);
+
+      const savedContracts = localStorage.getItem(`legal_cumulative_contracts_${userId}`);
+      setCumulativeContracts(savedContracts ? parseInt(savedContracts, 10) : 0);
+    } catch (e) {
+      console.error("Failed to load user-specific storage:", e);
+    }
+    setIsDataLoaded(true);
+  }, [user, isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded || !user || !isDataLoaded) return;
+    const userId = user.id;
     const clean = history.map((item) => ({ ...item, pdfUrl: undefined }));
-    localStorage.setItem("legal_agent_history", JSON.stringify(clean));
-  }, [history]);
+    localStorage.setItem(`legal_agent_history_${userId}`, JSON.stringify(clean));
+  }, [history, user, isLoaded, isDataLoaded]);
 
-  // Live Analytics tracking states
-  const [sessionTimeMs, setSessionTimeMs] = useState(() => {
-    try {
-      const saved = localStorage.getItem("lexora_session_time_ms");
-      return saved ? parseInt(saved, 10) : 15120000; // default 4.2 hours in ms
-    } catch {
-      return 15120000;
-    }
-  });
+  useEffect(() => {
+    if (!isLoaded || !user || !isDataLoaded) return;
+    localStorage.setItem(`lexora_cumulative_queries_${user.id}`, cumulativeQueries.toString());
+  }, [cumulativeQueries, user, isLoaded, isDataLoaded]);
 
-  const [cumulativeQueries, setCumulativeQueries] = useState(() => {
-    try {
-      const saved = localStorage.getItem("lexora_cumulative_queries");
-      return saved ? parseInt(saved, 10) : 124; // default seed
-    } catch {
-      return 124;
-    }
-  });
-
-  const [cumulativeContracts, setCumulativeContracts] = useState(() => {
-    try {
-      const saved = localStorage.getItem("lexora_cumulative_contracts");
-      return saved ? parseInt(saved, 10) : 15; // default seed
-    } catch {
-      return 15;
-    }
-  });
+  useEffect(() => {
+    if (!isLoaded || !user || !isDataLoaded) return;
+    localStorage.setItem(`legal_cumulative_contracts_${user.id}`, cumulativeContracts.toString());
+  }, [cumulativeContracts, user, isLoaded, isDataLoaded]);
 
   // Active Action-Based Session Timer (No background workers)
   const lastInteractionRef = useRef<number>(Date.now());
@@ -266,7 +270,9 @@ export default function Home() {
       if (elapsed > 0 && elapsed < MAX_INACTIVITY_GAP) {
         setSessionTimeMs((prev) => {
           const next = prev + elapsed;
-          localStorage.setItem("lexora_session_time_ms", next.toString());
+          if (user?.id) {
+            localStorage.setItem(`lexora_session_time_ms_${user.id}`, next.toString());
+          }
           return next;
         });
       }
@@ -288,7 +294,7 @@ export default function Home() {
       document.removeEventListener("visibilitychange", handleUserActivity);
       window.removeEventListener("focus", handleUserActivity);
     };
-  }, []);
+  }, [user, isLoaded, isDataLoaded]);
 
   // Sync messages back to active history item
   useEffect(() => {
@@ -348,7 +354,9 @@ export default function Home() {
     // Explicit Action Trigger: Increment contracts count by 1
     setCumulativeContracts((prev) => {
       const next = prev + 1;
-      localStorage.setItem("lexora_cumulative_contracts", next.toString());
+      if (user?.id) {
+        localStorage.setItem(`legal_cumulative_contracts_${user.id}`, next.toString());
+      }
       return next;
     });
 
@@ -440,6 +448,14 @@ export default function Home() {
     }
   };
 
+  if (!isLoaded || !isDataLoaded) {
+    return (
+      <div className="w-screen h-screen bg-slate-955/80 flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full border-2 border-indigo-500/20 animate-spin border-t-indigo-500" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-screen h-screen overflow-hidden relative">
       <AnimatePresence mode="wait">
@@ -475,6 +491,7 @@ export default function Home() {
                   sessionTimeMs={sessionTimeMs}
                   cumulativeQueries={cumulativeQueries}
                   cumulativeContracts={cumulativeContracts}
+                  isFreshUser={cumulativeContracts === 0 && cumulativeQueries === 0}
                 />
               ) : (
                 <>
@@ -624,7 +641,9 @@ export default function Home() {
                               onQuerySubmitted={() => {
                                 setCumulativeQueries((prev) => {
                                   const next = prev + 1;
-                                  localStorage.setItem("lexora_cumulative_queries", next.toString());
+                                  if (user?.id) {
+                                    localStorage.setItem(`lexora_cumulative_queries_${user.id}`, next.toString());
+                                  }
                                   return next;
                                 });
                               }}

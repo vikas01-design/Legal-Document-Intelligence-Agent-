@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import {
   Upload, Play, Sparkles, HelpCircle, Shield, Database, Cpu, AlertTriangle, FileText, ArrowRight
 } from "lucide-react";
@@ -308,15 +309,35 @@ export default function LandingPage({ onGetStarted, onUploadFile }: Props) {
         </nav>
 
         <div className="flex items-center gap-3">
-          <button onClick={onGetStarted} className="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors cursor-pointer font-display uppercase tracking-wider">
-            Sign In
-          </button>
-          <button
-            onClick={onGetStarted}
-            className="px-4 py-2 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-xs shadow-sm cursor-pointer font-display transition-all"
-          >
-            Get Started
-          </button>
+          <SignedIn>
+            <button
+              onClick={onGetStarted}
+              className="px-4 py-2 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-xs shadow-sm cursor-pointer font-display transition-all flex items-center gap-2"
+            >
+              Go to Workspace
+              <ArrowRight size={12} />
+            </button>
+            <div className="w-8 h-8 flex items-center justify-center relative z-50">
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "w-8 h-8 rounded-full border border-slate-200/50 shadow-sm",
+                  }
+                }}
+              />
+            </div>
+          </SignedIn>
+          <SignedOut>
+            <button onClick={onGetStarted} className="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors cursor-pointer font-display uppercase tracking-wider">
+              Sign In
+            </button>
+            <button
+              onClick={onGetStarted}
+              className="px-4 py-2 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-xs shadow-sm cursor-pointer font-display transition-all"
+            >
+              Get Started
+            </button>
+          </SignedOut>
         </div>
       </header>
 
