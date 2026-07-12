@@ -1,41 +1,27 @@
 export type Intent = "greeting" | "goodbye" | "legal-question" | "illegal-request" | "general-knowledge";
 
-const greetingTerms = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening"];
-const goodbyeTerms = ["bye", "goodbye", "thanks", "thank you", "see you", "talk later"];
+const greetingTerms = [
+  "hi", "hii", "hiii", "hello", "hey", "good morning", "good afternoon", "good evening",
+  "hello there", "hey there", "hola", "yo", "namaste", "howdy", "sup", "what's up", "whats up",
+];
+const goodbyeTerms = [
+  "bye", "goodbye", "thanks", "thank you", "see you", "talk later",
+  "ok bye", "that's all", "thats all", "done", "no more questions",
+];
 const illegalTerms = [
-  "money laundering",
-  "tax evasion",
-  "fraud",
-  "forgery",
-  "bribe",
-  "illegal",
-  "hack",
-  "bypass security",
-  "steal",
-  "evade",
+  "money laundering", "tax evasion", "fraud", "forgery", "bribe",
+  "illegal", "hack", "bypass security", "steal", "evade",
 ];
 const legalSignals = [
-  "contract",
-  "agreement",
-  "clause",
-  "legal",
-  "nda",
-  "confidential",
-  "liability",
-  "termination",
-  "payment",
-  "indemnity",
-  "force majeure",
-  "arbitration",
-  "intellectual property",
-  "compliance",
-  "risk",
-  "governing law",
-  "consumer protection",
-  "companies act",
-  "dpdp",
-  "pmla",
-  "it act",
+  "contract", "agreement", "clause", "legal", "nda", "confidential",
+  "liability", "termination", "payment", "indemnity", "force majeure",
+  "arbitration", "intellectual property", "compliance", "risk",
+  "governing law", "consumer protection", "companies act", "dpdp", "pmla", "it act",
+  "document", "what's inside", "whats inside", "read", "analyze", "review",
+  "summarize", "summary", "explain", "tell me about", "what does",
+  "check", "obligations", "parties", "rights", "duties", "penalty",
+  "dispute", "breach", "damages", "warranty", "renewal", "scope",
+  "exclusion", "limitation", "overview", "entire", "full analysis",
 ];
 
 function normalize(value: string) {
@@ -68,6 +54,11 @@ export async function detectIntent(question: string): Promise<{ intent: Intent; 
 
   if (legalSignals.some((term) => normalized.includes(term))) {
     return { intent: "legal-question", reason: "The request is related to legal analysis or contractual review." };
+  }
+
+  // Fallback: treat any question about the uploaded document as legal
+  if (normalized.includes("this") || normalized.includes("the document") || normalized.includes("uploaded") || normalized.endsWith("?")) {
+    return { intent: "legal-question", reason: "The request likely refers to the uploaded document." };
   }
 
   return { intent: "general-knowledge", reason: "The request is outside the legal domain." };

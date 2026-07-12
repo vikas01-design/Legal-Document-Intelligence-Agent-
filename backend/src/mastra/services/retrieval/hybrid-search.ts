@@ -24,35 +24,42 @@ function dedupeResults(results: RetrievalResult[]) {
 }
 
 export async function retrieveRelevantChunks(question: string): Promise<RetrievalResult[]> {
-  const expanded = expandQueries(question);
-  const queries = Array.from(new Set([question, ...expanded]));
+  try {
+    const expanded = expandQueries(question);
+    // Limit to 3 queries max for speed (each requires a Gemini embedding call)
+    const queries = Array.from(new Set([question, ...expanded])).slice(0, 3);
 
-  const allMatches: RetrievalResult[] = [];
+    const allMatches: RetrievalResult[] = [];
 
-  for (const query of queries) {
-    const embedding = await generateEmbedding(query);
-    const response = await qdrant.query("legal-documents", {
-      query: embedding,
-      limit: 10,
-      with_payload: true,
-      with_vector: false,
-    });
-
-    for (const point of response.points ?? []) {
-      const payload = point.payload ?? {};
-      allMatches.push({
-        text: String(payload.text ?? ""),
-        score: Number(point.score ?? 0),
-        page: Number(payload.page ?? 0),
-        section: String(payload.section ?? ""),
-        clause: String(payload.clause ?? ""),
-        document: String(payload.document ?? payload.source ?? "Unknown"),
-        chunkNumber: Number(payload.chunkNumber ?? 0),
+    for (const query of queries) {
+      const embedding = await generateEmbedding(query);
+      const response = await qdrant.query("legal-documents", {
+        query: embedding,
+        limit: 5,
+        with_payload: true,
+        with_vector: false,
       });
-    }
-  }
 
-  const deduped = dedupeResults(allMatches);
-  deduped.sort((a, b) => b.score - a.score);
-  return deduped.slice(0, 5);
+      for (const point of response.points ?? []) {
+        const payload = point.payload ?? {};
+        allMatches.push({
+          text: String(payload.text ?? ""),
+          score: Number(point.score ?? 0),
+          page: Number(payload.page ?? 0),
+          section: String(payload.section ?? ""),
+          clause: String(payload.clause ?? ""),
+          document: String(payload.document ?? payload.source ?? "Unknown"),
+          chunkNumber: Number(payload.chunkNumber ?? 0),
+        });
+      }
+    }
+
+    const deduped = dedupeResults(allMatches);
+    deduped.sort((a, b) => b.score - a.score);
+    return deduped.slice(0, 5);
+  } catch (error) {
+    console.error("❌ Retrieval failed (Qdrant may be unavailable or collection missing):");
+    console.error(error);
+    return [];
+  }
 }

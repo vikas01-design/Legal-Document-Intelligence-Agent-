@@ -62,7 +62,7 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
       setMessages((p) => [...p, aiMsg]);
       setTimeout(() => setMood("idle"), 2000);
     } catch {
-      setMessages((p) => [...p, { id: crypto.randomUUID(), role: "assistant", text: "Something went wrong." }]);
+      setMessages((p) => [...p, { id: crypto.randomUUID(), role: "assistant", text: "I'm having trouble processing your request right now. Please try again in a moment." }]);
       setMood("idle");
     } finally {
       setLoading(false);
