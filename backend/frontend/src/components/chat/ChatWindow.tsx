@@ -53,15 +53,30 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
 
     try {
       const res = await api.post("/chat", { question: text });
-      const aiMsg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        text: res.data.answer,
-        source: res.data.toolResults?.[0]?.payload?.result?.source,
-      };
-      setMood("talking");
-      setMessages((p) => [...p, aiMsg]);
-      setTimeout(() => setMood("idle"), 2000);
+      
+      console.log("Chat response:", res.data);
+      
+      if (res.data.success) {
+        const aiMsg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          text: res.data.answer,
+          source: res.data.toolResults?.[0]?.payload?.result?.source,
+        };
+        setMood("talking");
+        setMessages((p) => [...p, aiMsg]);
+        setTimeout(() => setMood("idle"), 2000);
+      } else {
+        setMessages((p) => [
+          ...p,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            text: res.data.message || "I'm having trouble processing your request right now.",
+          },
+        ]);
+        setMood("idle");
+      }
     } catch (err) {
       console.error("Chat request failed:", err);
       const isOffline =
@@ -73,7 +88,7 @@ export default function ChatWindow({ mood, setMood, hideHeader, messages, setMes
           id: crypto.randomUUID(),
           role: "assistant",
           text: isOffline
-            ? "I can't reach the Lexora backend right now. Make sure the API server is running on port 3001, then try again."
+            ? "I can't reach the Lexora backend right now. Please check your connection and try again."
             : "I'm having trouble processing your request right now. Please try again in a moment.",
         },
       ]);

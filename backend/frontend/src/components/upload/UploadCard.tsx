@@ -36,13 +36,26 @@ export default function UploadCard({ onUploaded, onScanningState }: Props) {
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await api.post("/upload", form, { headers: { "Content-Type": "multipart/form-data" } });
-      setStatus("success"); setMsg(`${res.data.chunks} chunks indexed`);
+      const res = await api.post("/upload", form, { 
+        headers: { "Content-Type": "multipart/form-data" } 
+      });
       
-      const localUrl = URL.createObjectURL(file);
-      onUploaded?.(localUrl, file);
-    } catch {
-      setStatus("error"); setMsg("Upload failed");
+      console.log("Upload response:", res.data);
+      
+      if (res.data.success) {
+        setStatus("success"); 
+        setMsg(`${res.data.chunks || 0} chunks indexed`);
+        
+        const localUrl = URL.createObjectURL(file);
+        onUploaded?.(localUrl, file);
+      } else {
+        setStatus("error"); 
+        setMsg(res.data.message || "Upload failed");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      setStatus("error"); 
+      setMsg("Upload failed - check console for details");
     } finally {
       setLoading(false);
       onScanningState?.(false);
