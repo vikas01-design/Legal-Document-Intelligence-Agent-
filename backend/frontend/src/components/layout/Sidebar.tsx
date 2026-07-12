@@ -1,3 +1,4 @@
+import { UserButton } from "@clerk/clerk-react";
 import { motion } from "framer-motion";
 import {
   MessageSquare, History, BarChart3,
@@ -50,9 +51,9 @@ export default function Sidebar({ activeTab = "chat", onTabChange, onLogoClick }
             </defs>
             <circle cx="20" cy="20" r="18" fill="url(#lexoraGrad1)" fillOpacity="0.1" />
             <path className="animate-left-scale" d="M12 16L7 27H17L12 16Z" fill="url(#lexoraGrad1)" fillOpacity="0.15" stroke="url(#lexoraGrad1)" strokeWidth="1.2" strokeLinejoin="round" />
-            <path className="animate-right-scale" d="M28 16L23 27H33L28 16Z" fill="url(#lexoraGrad1)" fillOpacity="0.15" stroke="url(#lexoraGrad1)" strokeWidth="1.2" strokeLinejoin="round" />
+            <path className="animate-right-scale" d="M28 16L23 27H33L28 16Z" fill="url(#lexoraGrad1)" fillOpacity="0.15" stroke="url(#lexoraGrad1)" strokeWidth="1.2" strokeLinejoin="round" filter="url(#logoGlow)" />
             <path className="animate-balance-beam" d="M8 16C13 19.5 27 19.5 32 16" stroke="url(#lexoraGrad1)" strokeWidth="2.2" strokeLinecap="round" />
-            <path d="M20 7.5V27C20 29.2091 18.2091 31 16 31H11" stroke="url(#lexoraGrad1)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" filter="url(#logoGlow)" />
+            <path d="M20 7.5V27C20 29.2091 18.2091 31 16 31H11" stroke="url(#lexoraGrad1)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
             <circle cx="20" cy="7.5" r="1.5" fill="#4f46e5" />
             <circle cx="12" cy="16" r="2.2" fill="url(#lexoraGrad1)" className="animate-left-scale" />
             <circle cx="28" cy="16" r="2.2" fill="url(#lexoraGrad1)" className="animate-right-scale" />
@@ -89,9 +90,15 @@ export default function Sidebar({ activeTab = "chat", onTabChange, onLogoClick }
         })}
       </nav>
 
-      {/* Avatar */}
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-        V
+      {/* Avatar (Clerk UserButton) */}
+      <div className="w-8 h-8 flex items-center justify-center relative z-50">
+        <UserButton
+          appearance={{
+            elements: {
+              avatarBox: "w-8 h-8 rounded-full border border-slate-200/50 shadow-sm",
+            }
+          }}
+        />
       </div>
     </motion.aside>
   );
