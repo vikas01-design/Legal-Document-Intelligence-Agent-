@@ -39,6 +39,7 @@ allowed_origins = [
     # Vercel deployments — update with your actual Vercel URL after first deploy
     "https://legal-document-agent.vercel.app",
     "https://legal-document-intelligence-agent.vercel.app",
+    "https://legal-document-intelligence-agent-.vercel.app",
     # Allow all vercel.app preview deployments
     r"https://.*\.vercel\.app",
     "http://localhost:5173",

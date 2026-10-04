@@ -1,110 +1,90 @@
-# Render Deployment Guide for Lexora AI
+# Deployment Guide
 
 ## Architecture
 
-Your Lexora AI app consists of two separate Render services:
-- **Frontend**: https://lexora-ai-app.onrender.com (React app)
-- **Backend**: https://lexora-ai-w6cs.onrender.com (Express API server)
+- **Frontend (Vercel)**: React/Vite app — `backend/frontend/`
+- **Backend (Render)**: Python Flask API — `backend/`
 
-## Required Environment Variables
+---
 
-Set these environment variables in your Render dashboard for the **backend service**:
+## Backend → Render
 
-### Core API Keys
-- `GOOGLE_API_KEY` - Your Google AI API key for Gemini embeddings and chat
-- `QDRANT_URL` - Your Qdrant vector database URL (e.g., `https://your-qdrant-instance.qdrant.io`)
-- `QDRANT_API_KEY` - Your Qdrant API key
-- `ENKRYPT_API_KEY` - Your Enkrypt API key for content safety checks
+### Setup on Render Dashboard
 
-### Optional Configuration
-- `LLM_PROVIDER` - LLM provider to use (default: `gemini`)
-  - Options: `gemini`, `groq`, `openai`, `xai`
+1. Go to [render.com](https://render.com) → **New Web Service**
+2. Connect your GitHub repo: `vikas01-design/Legal-Document-Intelligence-Agent-`
+3. Configure:
+   - **Root Directory**: `backend`
+   - **Runtime**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `python app.py`
+   - **Health Check Path**: `/api/health`
 
-### Port Configuration
-- `PORT` - Port for the backend server (default: `3001`)
+### Required Environment Variables
 
-## Frontend Configuration
+Set these in the Render dashboard under **Environment**:
 
-The frontend is configured to use the backend URL `https://lexora-ai-w6cs.onrender.com` in production. If you need to change this, set the `VITE_API_URL` environment variable in your frontend service.
+| Key | Description |
+|-----|-------------|
+| `GOOGLE_API_KEY` | Google AI / Gemini API key |
+| `QDRANT_URL` | Qdrant Cloud cluster URL |
+| `QDRANT_API_KEY` | Qdrant API key |
+| `ENKRYPT_API_KEY` | Enkrypt guardrails API key |
+| `LLM_PROVIDER` | `gemini` (default) |
+| `PORT` | `3001` |
 
-## CORS Configuration
+> A `render.yaml` is included at the repo root to configure this automatically.
 
-The backend is configured to allow CORS requests from:
-- https://lexora-ai-app.onrender.com (production frontend)
-- http://localhost:5173 (local development)
-- http://localhost:5174 (local development)
-- http://localhost:3000 (local development)
+---
 
-If you deploy to different domains, update the `allowedOrigins` array in `backend/src/server.ts`.
+## Frontend → Vercel
 
-## Deployment Steps
+### Login & Deploy
 
-1. **Push your code to GitHub**
-   ```bash
-   git add .
-   git commit -m "Fix API configuration and error handling"
-   git push origin main
-   ```
+```bash
+vercel login
+vercel --cwd backend/frontend --yes --prod
+```
 
-2. **Create a Web Service on Render**
-   - Connect your GitHub repository
-   - Root directory: `backend`
-   - Build command: `npm install && cd frontend && npm install && npm run build`
-   - Start command: `npm start`
-   - Node version: `22.13.0` or higher
+### Required Environment Variable on Vercel
 
-3. **Add Environment Variables**
-   - Go to your Render service dashboard
-   - Add all the required environment variables listed above
-   - Make sure to add them before the first deployment
+After your first deploy, set this in the Vercel dashboard under **Settings → Environment Variables**:
 
-4. **Deploy**
-   - Render will automatically deploy when you push to GitHub
-   - Monitor the deployment logs for any errors
+| Key | Value |
+|-----|-------|
+| `VITE_API_URL` | `https://legal-document-intelligence-agent.onrender.com` |
 
-## Common Issues and Solutions
+Then redeploy for the variable to take effect:
+```bash
+vercel --cwd backend/frontend --prod
+```
 
-### Issue: "QDRANT_URL and QDRANT_API_KEY must be set"
-**Solution**: Make sure both QDRANT_URL and QDRANT_API_KEY are set in Render environment variables.
+### Update CORS on Backend
 
-### Issue: "GOOGLE_API_KEY is missing in environment variables"
-**Solution**: Add your GOOGLE_API_KEY to Render environment variables.
+After getting your Vercel URL, add it to the `allowed_origins` list in `backend/app.py`:
 
-### Issue: Upload or chat not working
-**Solution**: 
-- Check browser console for API errors
-- Verify environment variables are set correctly
-- Check Render logs for backend errors
-- Ensure Qdrant instance is accessible
+```python
+allowed_origins = [
+    "https://your-app.vercel.app",  # add this
+    ...
+]
+```
 
-### Issue: Frontend can't reach backend
-**Solution**: 
-- The frontend now uses relative URLs in production
-- Ensure both frontend and backend are served from the same domain
-- Check that the backend is running and responding to health checks
-
-## Testing the Deployment
-
-1. **Health Check**
-   - Visit `https://your-app-url.onrender.com/api/health`
-   - Should return: `{"status":"Legal Document Intelligence API Running"}`
-
-2. **Upload Test**
-   - Upload a PDF document
-   - Check browser console for upload response
-   - Check Render logs for processing status
-
-3. **Chat Test**
-   - Ask a legal question
-   - Check browser console for chat response
-   - Verify AI response is displayed
-
-## Monitoring
-
-- Check Render logs for real-time error tracking
-- Monitor Qdrant dashboard for vector database status
-- Use browser console for frontend debugging
+---
 
 ## Local Development
 
-For local development, the frontend uses Vite's proxy to route API calls to localhost:3001. No environment variables are needed for local development except those required by the backend services.
+Frontend (Vite proxy routes to localhost:3001 automatically):
+```bash
+cd backend/frontend && npm run dev
+```
+
+Backend:
+```bash
+cd backend && python app.py
+```
+
+Or run both together:
+```bash
+cd backend && npm run dev:app
+```
