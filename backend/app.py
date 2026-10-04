@@ -36,6 +36,11 @@ app = Flask(__name__)
 # Configure CORS to allow requests from the frontend (same allowedOrigins as Node server)
 allowed_origins = [
     "https://lexora-ai-app.onrender.com",
+    # Vercel deployments — update with your actual Vercel URL after first deploy
+    "https://legal-document-agent.vercel.app",
+    "https://legal-document-intelligence-agent.vercel.app",
+    # Allow all vercel.app preview deployments
+    r"https://.*\.vercel\.app",
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:4173",
