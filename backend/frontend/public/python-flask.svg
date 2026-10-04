@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="py-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#387eb8"/>
+      <stop offset="100%" stop-color="#366994"/>
+    </linearGradient>
+    <linearGradient id="py-yellow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe873"/>
+      <stop offset="100%" stop-color="#ffd43b"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  <!-- Python Logo -->
+  <g filter="url(#shadow)">
+    <path fill="url(#py-blue)" d="M63.02 4c-15.5 0-24.5 6.87-24.5 20.06v14.66h25.01v3.67H25C9.49 42.39 0 51.37 0 66.88c0 15.5 8.38 24.49 23.89 24.49h7.73v-10.95c0-13.19 11.28-22.83 24.49-22.83h24.42V42.39H56.1V27.72c0-7.91 6.43-14.35 14.35-14.35h14.36V4H63.02zM49.43 11.34a4.58 4.58 0 1 1 0 9.17 4.58 4.58 0 0 1 0-9.17z"/>
+    <path fill="url(#py-yellow)" d="M64.98 124c15.5 0 24.5-6.87 24.5-20.06V89.28H64.47v-3.67H103c15.5 0 25-8.98 25-24.49 0-15.5-8.38-24.49-23.89-24.49h-7.73v10.95c0 13.19-11.28 22.83-24.49 22.83H47.47v15.2h24.42v14.67c0 7.91-6.43 14.35-14.35 14.35H43.18V124h21.8zM78.57 116.66a4.58 4.58 0 1 1 0-9.17 4.58 4.58 0 0 1 0 9.17z"/>
+  </g>
+  <!-- Flask Silhouette Badge -->
+  <g transform="translate(76, 76) scale(0.4)">
+    <rect x="-4" y="-4" width="112" height="112" rx="24" fill="#0f172a" stroke="#ffffff" stroke-width="6"/>
+    <path fill="#ffffff" d="M68 18V6h-4V2h-24v4h-4v12l-16 42c-2.4 6.3 2.2 13 8.9 13h54.2c6.7 0 11.3-6.7 8.9-13L68 18zM42 8h18v10h-18V8zm31.7 58.7c-.7 1.8-2.4 3.3-4.4 3.3H32.7c-2 0-3.7-1.5-4.4-3.3L38 42h25.7l8 24.7z"/>
+  </g>
+</svg>

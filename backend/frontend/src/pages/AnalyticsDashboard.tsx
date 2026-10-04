@@ -50,7 +50,7 @@ export default function AnalyticsDashboard({
   // Feedback state
   const [feedback, setFeedback] = useState<FeedbackState>(() => {
     try {
-      const saved = localStorage.getItem("lexora_analytics_feedback");
+      const saved = localStorage.getItem("thinkdoc_analytics_feedback");
       return saved ? JSON.parse(saved) : { rating: null, comment: "", submitted: false, isSubmitting: false };
     } catch {
       return { rating: null, comment: "", submitted: false, isSubmitting: false };
@@ -223,8 +223,8 @@ export default function AnalyticsDashboard({
         isSubmitting: false
       };
       setFeedback(updated);
-      localStorage.setItem("lexora_analytics_feedback", JSON.stringify(updated));
-      console.log("Lexora AI Feedback Received:", {
+      localStorage.setItem("thinkdoc_analytics_feedback", JSON.stringify(updated));
+      console.log("ThinkDoc Feedback Received:", {
         rating: updated.rating,
         comment: updated.comment,
         submittedAt: new Date().toISOString()
@@ -235,7 +235,7 @@ export default function AnalyticsDashboard({
   const handleFeedbackReset = () => {
     const reset = { rating: null, comment: "", submitted: false, isSubmitting: false };
     setFeedback(reset);
-    localStorage.removeItem("lexora_analytics_feedback");
+    localStorage.removeItem("thinkdoc_analytics_feedback");
   };
 
   // --- SVG SPARKLINE PATH CALCULATOR ---
@@ -304,7 +304,7 @@ export default function AnalyticsDashboard({
             <h1 className="text-xl md:text-2xl font-bold font-display text-slate-800 flex items-center gap-2">
               Analytics & Insights
               <span className="text-[10px] bg-indigo-50 border border-indigo-100 text-indigo-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-bold">
-                Lexora AI v1.2
+                ThinkDoc v1.2
               </span>
             </h1>
             <p className="text-xs text-slate-500 font-sans mt-0.5">
@@ -351,7 +351,7 @@ export default function AnalyticsDashboard({
         {/* --- SECTION 1: USAGE & ENGAGEMENT METRICS --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Metric 1: Time Spent in Lexora AI */}
+          {/* Metric 1: Time Spent in ThinkDoc */}
           <motion.div
             whileHover={{ y: -2, boxShadow: "0 12px 24px -10px rgba(0, 0, 0, 0.05)" }}
             className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group min-h-[148px]"
@@ -805,7 +805,7 @@ export default function AnalyticsDashboard({
                 Are these analytics helpful for your legal workflow?
               </h3>
               <p className="text-xs text-slate-500 font-sans leading-relaxed">
-                We are constantly refining our Lexora intelligence engine. Tell us if these charts aid your contract checks, or request a custom metric you want our AI to track.
+                We are constantly refining our ThinkDoc intelligence engine. Tell us if these charts aid your contract checks, or request a custom metric you want our AI to track.
               </p>
             </div>
 

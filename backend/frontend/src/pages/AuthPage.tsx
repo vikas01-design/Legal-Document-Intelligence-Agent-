@@ -48,7 +48,7 @@ export default function AuthPage({ onBack }: Props) {
             <div className="w-9 h-9 rounded-xl bg-indigo-600/10 border border-indigo-500/25 flex items-center justify-center">
               <Scale className="text-indigo-500" size={18} />
             </div>
-            <span className="text-sm font-bold tracking-tight text-white font-display">Lexora AI</span>
+            <span className="text-sm font-bold tracking-tight text-white font-display">ThinkDoc</span>
           </div>
 
           <div className="space-y-4 my-8 md:my-0">

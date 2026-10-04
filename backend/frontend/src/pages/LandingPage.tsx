@@ -34,7 +34,7 @@ function DashboardMockup() {
           <div className="w-2.5 h-2.5 rounded-full bg-rose-400" />
           <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-          <span className="text-[10px] text-slate-600 font-bold ml-2 font-display">Lexora Workspace v1.4</span>
+          <span className="text-[10px] text-slate-600 font-bold ml-2 font-display">ThinkDoc Workspace v1.4</span>
         </div>
         <div className="px-2.5 py-0.5 rounded bg-indigo-50 border border-indigo-150 text-[9px] text-indigo-650 font-bold uppercase tracking-wider">
           AI Shield Active
@@ -116,7 +116,7 @@ function DashboardMockup() {
                       <p className="text-slate-800 font-semibold leading-normal">Are there renewal costs?</p>
                     </div>
                     <div className="bg-indigo-50/50 p-2 rounded-lg border border-indigo-100/65 text-left">
-                      <span className="text-[8px] text-indigo-600 block mb-0.5">LEXORA AI</span>
+                      <span className="text-[8px] text-indigo-600 block mb-0.5">THINKDOC</span>
                       <p className="text-slate-800 font-semibold leading-normal">Yes. Section 4.3 details an automatic 5% annual escalator fee on the base rent rate.</p>
                     </div>
                   </div>
@@ -233,7 +233,7 @@ export default function LandingPage({ onGetStarted, onUploadFile }: Props) {
 
   // Steps configuration for Interactive Blueprint
   const blueprintSteps = [
-    { id: "intent", title: "Ingestion", icon: HelpCircle, label: "User Question", desc: "User uploads PDF contract or asks a legal question. Lexora reads, parses, and structures text inputs." },
+    { id: "intent", title: "Ingestion", icon: HelpCircle, label: "User Question", desc: "User uploads PDF contract or asks a legal question. ThinkDoc reads, parses, and structures text inputs." },
     { id: "guard", title: "Prompt Guard", icon: Shield, label: "Enkrypt Guard", desc: "Enkrypt AI instantly sanitizes prompts, checks boundaries, and neutralizes injection threats." },
     { id: "retrieval", title: "Retrieval", icon: Database, label: "Qdrant Index", desc: "Queries Qdrant for semantic match indices, pulling matching context snippets." },
     { id: "agent", title: "AI Agent", icon: Cpu, label: "Mastra Core", desc: "Mastra directs the core legal model to cross-reference contract sections and check compliance." },
@@ -272,30 +272,8 @@ export default function LandingPage({ onGetStarted, onUploadFile }: Props) {
           onClick={() => containerRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
           className="flex items-center gap-2.5 cursor-pointer group"
         >
-          <motion.div
-            whileHover={{ scale: 1.06 }}
-            className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm border border-slate-200 overflow-hidden"
-          >
-            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8">
-              <defs>
-                <linearGradient id="lexoraGradHeader" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#4f46e5" />
-                  <stop offset="50%" stopColor="#6366f1" />
-                  <stop offset="100%" stopColor="#818cf8" />
-                </linearGradient>
-              </defs>
-              <circle cx="20" cy="20" r="18" fill="url(#lexoraGradHeader)" fillOpacity="0.08" />
-              <path className="animate-left-scale" d="M12 16L7 27H17L12 16Z" fill="url(#lexoraGradHeader)" fillOpacity="0.1" stroke="url(#lexoraGradHeader)" strokeWidth="1.2" strokeLinejoin="round" />
-              <path className="animate-right-scale" d="M28 16L23 27H33L28 16Z" fill="url(#lexoraGradHeader)" fillOpacity="0.1" stroke="url(#lexoraGradHeader)" strokeWidth="1.2" strokeLinejoin="round" />
-              <path className="animate-balance-beam" d="M8 16C13 19.5 27 19.5 32 16" stroke="url(#lexoraGradHeader)" strokeWidth="2.2" strokeLinecap="round" />
-              <path d="M20 7.5V27C20 29.2091 18.2091 31 16 31H11" stroke="url(#lexoraGradHeader)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="20" cy="7.5" r="1.5" fill="#4f46e5" />
-              <circle cx="12" cy="16" r="2.2" fill="url(#lexoraGradHeader)" className="animate-left-scale" />
-              <circle cx="28" cy="16" r="2.2" fill="url(#lexoraGradHeader)" className="animate-right-scale" />
-            </svg>
-          </motion.div>
-          <span className="font-bold text-sm tracking-wider font-display bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-            Lexora AI
+          <span className="font-black text-xl tracking-tight font-display bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent group-hover:from-indigo-500 group-hover:to-violet-500 transition-all duration-200">
+            ThinkDoc
           </span>
         </div>
 
@@ -350,12 +328,7 @@ export default function LandingPage({ onGetStarted, onUploadFile }: Props) {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="space-y-7"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-150 bg-indigo-50 text-indigo-700 select-none">
-            <Sparkles size={11} className="animate-pulse" />
-            <span className="text-[10px] font-bold tracking-widest uppercase font-display">
-              Lexora AI • Enterprise Standard
-            </span>
-          </div>
+
 
           {/* Typewriter Clarify Animation for Headline Tagline */}
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.18] font-display flex flex-wrap gap-x-2.5 gap-y-1.5">
@@ -573,6 +546,19 @@ export default function LandingPage({ onGetStarted, onUploadFile }: Props) {
               <h3 className="text-xs font-bold text-slate-800 font-display tracking-wider uppercase">Node.js Backend</h3>
               <p className="text-[11px] text-slate-700 leading-relaxed font-sans font-medium">
                 Runs scalable back-end services to extract document text, tokenise clauses, and direct API logic.
+              </p>
+            </div>
+          </div>
+
+          {/* Python Flask */}
+          <div className="border-glow-card p-6 flex flex-col gap-4">
+            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-2.5">
+              <img src="/python-flask.svg" alt="Python Flask" className="w-full h-full object-contain transition-all duration-300" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-xs font-bold text-slate-800 font-display tracking-wider uppercase">Python Flask</h3>
+              <p className="text-[11px] text-slate-700 leading-relaxed font-sans font-medium">
+                Powers modular Blueprints, high-performance RAG pipelines, and automated legal contract risk analysis.
               </p>
             </div>
           </div>
@@ -812,7 +798,7 @@ export default function LandingPage({ onGetStarted, onUploadFile }: Props) {
 
       {/* Footer */}
       <footer className="border-t border-slate-200/50 py-8 text-center text-[10px] text-slate-500 select-none uppercase tracking-widest font-semibold font-display">
-        © 2026 Lexora AI • Designed For Legal Intelligence
+        © 2026 ThinkDoc • Designed For Legal Intelligence
       </footer>
     </div>
   );

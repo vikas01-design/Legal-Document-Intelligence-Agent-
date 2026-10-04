@@ -125,7 +125,7 @@ export async function runLexoraPipeline(question: string) {
   if (intent.intent === "greeting") {
     return {
       success: true,
-      answer: "Hello! 👋 I'm Lexora AI, your legal document intelligence assistant. I can help review legal documents, assess risk, and check compliance with Indian law. Please upload a contract or ask me a legal question!",
+      answer: "Hello! 👋 I'm ThinDoc AI, your legal document intelligence assistant. I can help review legal documents, assess risk, and check compliance with Indian law. Please upload a contract or ask me a legal question!",
       intent: intent.intent,
       citations: [],
       sources: [],

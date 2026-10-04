@@ -197,7 +197,7 @@ export default function ChatWindow({
               Speaking to
             </p>
             <h2 className="text-base font-semibold text-white font-display">
-              Lexora AI
+              ThinkDoc
             </h2>
           </div>
           <div className="flex items-center gap-2">
@@ -313,7 +313,7 @@ export default function ChatWindow({
             </div>
             <div>
               <p className="text-[11px] text-slate-400 uppercase tracking-widest font-semibold leading-none font-display">
-                Lexora AI
+                ThinkDoc
               </p>
               <p className="text-[10px] text-slate-400 mt-0.5">
                 {mood === "thinking"

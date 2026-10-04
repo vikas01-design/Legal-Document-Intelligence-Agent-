@@ -228,10 +228,10 @@ export default function Home() {
       const savedHistory = localStorage.getItem(`legal_agent_history_${userId}`);
       setHistory(savedHistory ? JSON.parse(savedHistory) : []);
 
-      const savedTime = localStorage.getItem(`lexora_session_time_ms_${userId}`);
+      const savedTime = localStorage.getItem(`thinkdoc_session_time_ms_${userId}`);
       setSessionTimeMs(savedTime ? parseInt(savedTime, 10) : 0);
 
-      const savedQueries = localStorage.getItem(`lexora_cumulative_queries_${userId}`);
+      const savedQueries = localStorage.getItem(`thinkdoc_cumulative_queries_${userId}`);
       setCumulativeQueries(savedQueries ? parseInt(savedQueries, 10) : 0);
 
       const savedContracts = localStorage.getItem(`legal_cumulative_contracts_${userId}`);
@@ -251,7 +251,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!isLoaded || !user || !isDataLoaded) return;
-    localStorage.setItem(`lexora_cumulative_queries_${user.id}`, cumulativeQueries.toString());
+    localStorage.setItem(`thinkdoc_cumulative_queries_${user.id}`, cumulativeQueries.toString());
   }, [cumulativeQueries, user, isLoaded, isDataLoaded]);
 
   useEffect(() => {
@@ -271,7 +271,7 @@ export default function Home() {
         setSessionTimeMs((prev) => {
           const next = prev + elapsed;
           if (user?.id) {
-            localStorage.setItem(`lexora_session_time_ms_${user.id}`, next.toString());
+            localStorage.setItem(`thinkdoc_session_time_ms_${user.id}`, next.toString());
           }
           return next;
         });
@@ -642,7 +642,7 @@ export default function Home() {
                                 setCumulativeQueries((prev) => {
                                   const next = prev + 1;
                                   if (user?.id) {
-                                    localStorage.setItem(`lexora_cumulative_queries_${user.id}`, next.toString());
+                                    localStorage.setItem(`thinkdoc_cumulative_queries_${user.id}`, next.toString());
                                   }
                                   return next;
                                 });

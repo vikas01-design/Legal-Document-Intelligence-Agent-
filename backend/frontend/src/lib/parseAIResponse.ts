@@ -1,5 +1,5 @@
 /**
- * Parses the structured markdown output from Lexora AI into typed sections.
+ * Parses the structured markdown output from ThinkDoc into typed sections.
  *
  * The AI is instructed to produce:
  *   ## 1. Clause Summary
